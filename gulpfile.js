@@ -42,8 +42,7 @@ const cssFiles = [
 	'src/css/fonts/*.svg'
 	],
 	imagepath = [
-	'src/img/**/*.png',
-	'src/img/**/*.jpg'
+	'src/img/**/*'
 	]
 //task for style css
 function styles() {
@@ -90,14 +89,16 @@ function clean(){
 	return del(['build/*'])
 }
 //для сжатия картинок 
-function imgCompress(){
-	return gulp.src(imagepath)
-	.pipe(imagemin(
-		progressive: true
-		))
-	.pipe(gulp.dest('build/img/'))
-}
 
+function imgCompress(){
+	return(gulp.src(imagepath))
+	.pipe(imagemin([ 
+	    imagemin.gifsicle({interlaced: true}),
+	    imagemin.jpegtran({progressive: true}),
+	    imagemin.optipng({optimizationLevel: 5})
+		]))
+	.pipe(gulp.dest('build/img'))
+}
 
 //перенос JS внешних библиотек
 function transferjslibs(){
@@ -113,6 +114,11 @@ function transfercsslibs(){
 function transferfonts(){
 	return(gulp.src(fontLibs))
 	.pipe(gulp.dest('build/css/fonts'))
+}
+//Перенос картинок (не сжатых) 
+function transferImg(){
+	return(gulp.src(imagepath))
+	.pipe(gulp.dest('build/img'))
 }
 
 function watch(){
@@ -131,9 +137,9 @@ function watch(){
 }
 
 //Сжатие картинок
-gulp.task('imagemin', imgCompress);
+gulp.task('imageCompress', imgCompress);
 //Таск для перенеса в папку билд внешних библиотек
-gulp.task('transferlibs', gulp.series(transferjslibs, transfercsslibs, transferfonts));
+gulp.task('transferlibs', gulp.series(transferjslibs, transfercsslibs, transferfonts, transferImg));
 //Таск вызывающий функцию styles
 gulp.task('styles1', styles);
 //Таск вызывающий функцию scripts
@@ -145,6 +151,6 @@ gulp.task('watch', watch);
 //удаление фаилов в папке build и запсук styles и scripts
 gulp.task('build', gulp.series(clean, gulp.parallel(
 	styles, scripts, transferjslibs, transfercsslibs, 
-	transferfonts)));
+	transferfonts, transferImg)));
 //запускаем таск build и watch последовательно
 gulp.task('dev', gulp.series('build', 'watch'));
